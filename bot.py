@@ -1088,7 +1088,7 @@ def render_traffic_home(chat_id, message_id=None):
         services_with_counts.sort(key=lambda x: x[1], reverse=True)
 
         if not services_with_counts:
-            message_text += "<i>No active traffic recorded in the last 10 minutes on DXA.</i>"
+            message_text += "<i>No active traffic recorded in the last 10 minutes on NHBD.</i>"
         else:
             is_first = True
             # ডাইনামিক ইনলাইন বাটনের ইমোজি আইডি
@@ -1965,7 +1965,7 @@ def render_admin_dxa_menu(chat_id, message_id):
     max_c = cfg.get("max_concurrent", 3)
     cd = cfg.get("cooldown", 0)
     
-    text = f"{get_pemoji('gem', '💎')} <b>MANAGE DXA (Withdrawal System)</b>\n━━━━━━━━━━━━━━━━━━\n"
+    text = f"{get_pemoji('gem', '💎')} <b>MANAGE NHBD (Withdrawal System)</b>\n━━━━━━━━━━━━━━━━━━\n"
     text += f"{get_pemoji('dashboard', '📊')} <b>Withdraw Group:</b> <code>{escape_html(w_grp) if w_grp else 'Not Set'}</code>\n"
     text += f"{get_pemoji('fire', '🔥')} <b>OTP Reward:</b> <code>{rew} ৳</code>\n"
     text += f"{get_pemoji('otp', '🔐')} <b>Min Withdraw:</b> <code>{m_wd} ৳</code>\n"
@@ -2393,7 +2393,7 @@ def handle_callback_query(callback_query):
          answer_callback(callback_id, "Checking Force Join...")
          if check_force_join(chat_id, message_id):
              call_telegram("deleteMessage", {"chat_id": chat_id, "message_id": message_id})
-             send_bot_message(chat_id, "✅ <b>Verification Successful!</b>\nWelcome to DXA Bot.", get_bot_menu_keyboard(chat_id))
+             send_bot_message(chat_id, "✅ <b>Verification Successful!</b>\nWelcome to NHBD Bot.", get_bot_menu_keyboard(chat_id))
 
     elif data == "adm_fj_menu":
          user_conversations.pop(chat_id, None) # 🛠️ চ্যানেল লিংক দেওয়ার স্টেট ক্লিয়ার করা হলো
@@ -2419,7 +2419,7 @@ def handle_callback_query(callback_query):
     elif data == "adm_fj_add":
          answer_callback(callback_id, "Send Channel Link...")
          user_conversations[chat_id] = "waiting_fj_channel"
-         text = "🔗 <b>Add Force Join Channel</b>\n\nPlease send the channel username (e.g., <code>@dxa_admin</code>) or an invite link."
+         text = "🔗 <b>Add Force Join Channel</b>\n\nPlease send the channel username (e.g., <code>@noobxvau</code>) or an invite link."
          edit_bot_message(chat_id, message_id, text, {"inline_keyboard": [[{"text": " Back", "callback_data": "adm_fj_menu", "style": "danger", "icon_custom_emoji_id": "5267490665117275176"}]]})
 
     elif data == "adm_admin_menu":
