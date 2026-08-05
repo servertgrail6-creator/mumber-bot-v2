@@ -47,7 +47,7 @@ PANELS_FILE = "panels.json"
 SERVICES_FILE = "services.json"
 ADMIN_DB_FILE = "admin_db.json"
 OWNER_ID = "1849126202" # Change this ID to your main Admin ID
-TELEGRAM_TOKEN = "8994153110:AAHtSwYEtwbtVWP05ljbQD9wrB6V_vI5ZMk"  # আপনার টেলিগ্রাম বট টোকেনটি এখানে দিন
+TELEGRAM_TOKEN = "8994153110:AAFyc_ZzOK5FhG7Yl-2DQ50QqUjLU-VaG-8"  # আপনার টেলিগ্রাম বট টোকেনটি এখানে দিন
 
 # Admin DB Logic (Tracks Users and Today's Numbers)
 def load_admin_db():
