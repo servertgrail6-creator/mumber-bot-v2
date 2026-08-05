@@ -617,6 +617,8 @@ def load_panels():
                 p.setdefault("lastSeenCDRId", None)
                 p.setdefault("lastSeenGetnumIds", [])
                 p.setdefault("status", "Initializing...")
+                p.setdefault("is_active", True)
+                p.setdefault("is_traffic_active", True)
             return list_panels
     except Exception as e:
         logger.error(f"Failed to read panels.json: {e}")
@@ -946,10 +948,12 @@ def buy_number(range_val, target_panel_id=None):
         }
         rid = range_val.replace("X", "").replace("*", "").strip()
         
-        res = requests.post(num_url, json={"rid": rid}, headers=headers, timeout=20)
+        logger.info(f"Buying number: URL={num_url}, RID={rid}")
+        res = requests.post(num_url, json={"rid": rid}, headers=headers, timeout=30)
         
         if res.status_code == 200:
             data = res.json()
+            logger.info(f"API Response: {data}")
             if data.get("meta", {}).get("code") == 200 and data.get("data"):
                 num_data = data["data"]
                 today = datetime.now().strftime("%Y-%m-%d")
@@ -967,6 +971,7 @@ def buy_number(range_val, target_panel_id=None):
                     "country": num_data.get("country", "Unknown")
                 }
             return {"success": False, "message": data.get("message", "Failed to get number from API.")}
+        logger.error(f"API Error: {res.status_code}, Response: {res.text}")
         return {"success": False, "message": f"API Error: {res.status_code}"}
     except Exception as e:
         logger.error(f"Error buying number for range: {e}")
@@ -1334,25 +1339,35 @@ def trigger_buy_number(chat_id, range_val, target_panel_id=None, message_id=None
 
         initial_text = f"{get_pemoji('wait', '⏳')} <i>Allocating {batch_size} number(s) for range <b>{escape_html(range_val)}</b>... Please wait.</i>"
         
-        if message_id:
-            edit_bot_message(chat_id, message_id, initial_text)
-        else:
+        # Try to edit, if fails send new message
+        try:
+            if message_id:
+                edit_bot_message(chat_id, message_id, initial_text)
+            else:
+                res = send_bot_message(chat_id, initial_text)
+                if res and res.get("result"):
+                    message_id = res["result"]["message_id"]
+        except Exception as e:
+            logger.error(f"Initial message edit failed: {e}")
             res = send_bot_message(chat_id, initial_text)
-            message_id = res.get("result", {}).get("message_id") if res else None
+            if res and res.get("result"):
+                message_id = res["result"]["message_id"]
 
         numbers_fetched = []
         last_err = "Unknown error"
         if "active_numbers" not in admin_db: admin_db["active_numbers"] = {}
         
-        for _ in range(batch_size):
+        for attempt in range(batch_size):
             result = buy_number(range_val, target_panel_id)
             if result.get("success"):
                 numbers_fetched.append(result)
                 number_val = result.get("number") or ""
                 clean_num = str(number_val).replace("+", "").strip()
                 admin_db["active_numbers"][clean_num] = str(chat_id)
+                logger.info(f"Number allocated successfully: {clean_num}")
             else:
                 last_err = result.get("message", "Failed.")
+                logger.error(f"Buy number attempt {attempt+1} failed: {last_err}")
                 break
                 
         if numbers_fetched:
@@ -1366,6 +1381,8 @@ def trigger_buy_number(chat_id, range_val, target_panel_id=None, message_id=None
             
             for res in numbers_fetched:
                 num = res.get("number", "")
+                if not num:
+                    continue
                 keyboard["inline_keyboard"].append([{
                     "text": f" +{num.replace('+', '')}",
                     "copy_text": {"text": f"{num}"},
@@ -1380,9 +1397,15 @@ def trigger_buy_number(chat_id, range_val, target_panel_id=None, message_id=None
                 ],
                 [{"text": " Back", "callback_data": "usr_search_home", "style": "danger", "icon_custom_emoji_id": "5267490665117275176"}]
             ])
-            if message_id:
-                edit_bot_message(chat_id, message_id, blank_text, keyboard)
-            else:
+            
+            # Try to edit final message, if fails send new
+            try:
+                if message_id:
+                    edit_bot_message(chat_id, message_id, blank_text, keyboard)
+                else:
+                    send_bot_message(chat_id, blank_text, keyboard)
+            except Exception as e:
+                logger.error(f"Final edit failed, sending new message: {e}")
                 send_bot_message(chat_id, blank_text, keyboard)
         else:
             failure_text = f"❌ <b>Get Number Failed!</b>\n\n" \
@@ -1395,9 +1418,14 @@ def trigger_buy_number(chat_id, range_val, target_panel_id=None, message_id=None
                     [{"text": "🔁 Retry getting range", "callback_data": f"buy_{range_val}", "style": "danger"}]
                 ]
             }
-            if message_id:
-                edit_bot_message(chat_id, message_id, failure_text, keyboard)
-            else:
+            
+            try:
+                if message_id:
+                    edit_bot_message(chat_id, message_id, failure_text, keyboard)
+                else:
+                    send_bot_message(chat_id, failure_text, keyboard)
+            except Exception as e:
+                logger.error(f"Failure edit failed, sending new message: {e}")
                 send_bot_message(chat_id, failure_text, keyboard)
     except Exception as e:
         logger.error(f"Error buying range: {e}")
@@ -2155,21 +2183,36 @@ def allocate_and_show_number_py(chat_id, message_id, service_id, country_code, c
         range_val += "XXX"
         
     wait_emoji = get_pemoji("wait", "⏳")
-    edit_bot_message(chat_id, message_id, f"{wait_emoji} <i>Allocating {batch_size} number(s) for <b>{escape_html(service_name)}</b>... Please wait.</i>")
+    
+    # 🔥 KEY FIX: Check if message_id exists before editing
+    try:
+        if message_id:
+            edit_bot_message(chat_id, message_id, f"{wait_emoji} <i>Allocating {batch_size} number(s) for <b>{escape_html(service_name)}</b>... Please wait.</i>")
+        else:
+            res = send_bot_message(chat_id, f"{wait_emoji} <i>Allocating {batch_size} number(s) for <b>{escape_html(service_name)}</b>... Please wait.</i>")
+            if res and res.get("result"):
+                message_id = res["result"]["message_id"]
+    except Exception as e:
+        logger.error(f"Initial allocation edit failed: {e}")
+        res = send_bot_message(chat_id, f"{wait_emoji} <i>Allocating {batch_size} number(s) for <b>{escape_html(service_name)}</b>... Please wait.</i>")
+        if res and res.get("result"):
+            message_id = res["result"]["message_id"]
     
     numbers_fetched = []
     last_err = "Unknown error"
     if "active_numbers" not in admin_db: admin_db["active_numbers"] = {}
     
-    for _ in range(batch_size):
+    for attempt in range(batch_size):
         result = buy_number(range_val, panel_id)
         if result.get("success"):
             numbers_fetched.append(result)
             number_val = result.get("number") or ""
             clean_num = str(number_val).replace("+", "").strip()
             admin_db["active_numbers"][clean_num] = str(chat_id)
+            logger.info(f"Number allocated successfully: {clean_num}")
         else:
             last_err = result.get("message", "Failed to retrieve.")
+            logger.error(f"Buy number attempt {attempt+1} failed: {last_err}")
             break
             
     if numbers_fetched:
@@ -2183,6 +2226,8 @@ def allocate_and_show_number_py(chat_id, message_id, service_id, country_code, c
         
         for res in numbers_fetched:
             num = res.get("number", "")
+            if not num:
+                continue
             actual_c_code = get_country_code(num)
             c_info_actual = get_country_info(actual_c_code)
             actual_flag_em_id = c_info_actual.get("id", "5336972142066047577")
@@ -2201,7 +2246,16 @@ def allocate_and_show_number_py(chat_id, message_id, service_id, country_code, c
             ],
             [{"text": " Back", "callback_data": f"usr_srv_sel:{service_id}", "style": "danger", "icon_custom_emoji_id": "5267490665117275176"}]
         ])
-        edit_bot_message(chat_id, message_id, blank_text, {"inline_keyboard": inline_keyboard})
+        
+        # 🔥 KEY FIX: Send new message if editing fails
+        try:
+            if message_id:
+                edit_bot_message(chat_id, message_id, blank_text, {"inline_keyboard": inline_keyboard})
+            else:
+                send_bot_message(chat_id, blank_text, {"inline_keyboard": inline_keyboard})
+        except Exception as e:
+            logger.error(f"Final edit failed, sending new message: {e}")
+            send_bot_message(chat_id, blank_text, {"inline_keyboard": inline_keyboard})
     else:
         failure_text = f"{get_pemoji('error', '❌')} <b>Get Number Failed!</b>\n\n" \
                        f"<b>Service:</b> {escape_html(service_name)}\n" \
@@ -2216,7 +2270,16 @@ def allocate_and_show_number_py(chat_id, message_id, service_id, country_code, c
                 {"text": " Back to Countries", "callback_data": f"usr_srv_sel:{service_id}", "style": "danger", "icon_custom_emoji_id": "5267490665117275176"}
             ]
         ]
-        edit_bot_message(chat_id, message_id, failure_text, {"inline_keyboard": inline_keyboard})
+        
+        # 🔥 KEY FIX: Try edit, if fails send new
+        try:
+            if message_id:
+                edit_bot_message(chat_id, message_id, failure_text, {"inline_keyboard": inline_keyboard})
+            else:
+                send_bot_message(chat_id, failure_text, {"inline_keyboard": inline_keyboard})
+        except Exception as e:
+            logger.error(f"Failure edit failed, sending new message: {e}")
+            send_bot_message(chat_id, failure_text, {"inline_keyboard": inline_keyboard})
 
 # ----------------------------------------------------
 # Telegram Bot Inbound Controllers
