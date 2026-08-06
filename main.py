@@ -745,14 +745,14 @@ def extract_otp(text):
 def normalize_number(num):
     return re.sub(r'\D', '', str(num))
 
-# মাইনো মাস্কিং স্টাইল (2289✧MINO✧9921)
+# মাইনো মাস্কিং স্টাইল (2289✧NOOBXVAU✧9921)
 def mask_number(num):
     num_str = str(num).replace('+', '').replace(' ', '').strip()
     if len(num_str) >= 8:
-        return f"{num_str[:4]}✧MINO✧{num_str[-4:]}"
+        return f"{num_str[:4]}✧NOOBXVAU✧{num_str[-4:]}"
     elif len(num_str) > 4:
         half = len(num_str) // 2
-        return f"{num_str[:half]}✧MINO✧{num_str[half:]}"
+        return f"{num_str[:half]}✧NOOBXVAU✧{num_str[half:]}"
     return num_str
 
 def format_otp_display(otp):
@@ -1173,7 +1173,7 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     support_text = "💬 <b>SUPPORT & HELP CENTER</b> 🎧\n\nCLICK THE BUTTON BELOW TO CONTACT SUPPORT 📩"
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("💬 SUPPORT", url=f"https://t.me/{support_user.replace('@', '')}", style="primary")],
-        [InlineKeyboardButton("👨‍💻 DEVELOPER", url="t.me/hinmrtin", style="primary")]
+        [InlineKeyboardButton("👨‍💻 DEVELOPER", url="t.me/noobxvau", style="primary")]
     ])
     await update.message.reply_text(support_text, reply_markup=keyboard, parse_mode="HTML")
 
@@ -1269,8 +1269,8 @@ async def monitor_loop(app):
                         group_buttons = InlineKeyboardMarkup([
                             [btn_copy],
                             [
-                                InlineKeyboardButton("🤖 Panel ↗", url="https://t.me/Zenex_Number_bot?start=7940416120"),
-                                InlineKeyboardButton("📢 Channel ↗", url=settings.get("channel_url", "https://t.me/MinoXofficial0"))
+                                InlineKeyboardButton("🤖 Panel ↗", url="https://t.me/nhbdnumberv2_bot"),
+                                InlineKeyboardButton("📢 Channel ↗", url=settings.get("channel_url", "https://t.me/nhbdotpmethod"))
                             ]
                         ])
                         
@@ -1382,8 +1382,8 @@ async def process_auto_number(update, context, range_text):
         )
         
         settings = load_settings()
-        otp_group_url = settings.get("otp_group_url", "https://t.me/+31eV11IT7WQzMjI9")
-        channel_url = settings.get("channel_url", "https://t.me/MinoXofficial0")
+        otp_group_url = settings.get("otp_group_url", "https://t.me/+dhPxM_X5InFhMmE9")
+        channel_url = settings.get("channel_url", "https://t.me/nhbdotpmethod")
         
         # ট্যাপ-টু-কপি বাটন তৈরি এবং চারপাশের অতিরিক্ত ইমোজি দূরীকরণ
         if HAS_COPY_BTN:
@@ -1461,8 +1461,8 @@ async def process_numbers(update, context, range_text, count, edit_message=None)
         )
 
         settings = load_settings()
-        otp_group_url = settings.get("otp_group_url", "https://t.me/+31eV11IT7WQzMjI9")
-        channel_url = settings.get("channel_url", "https://t.me/MinoXofficial0")
+        otp_group_url = settings.get("otp_group_url", "ttps://t.me/+dhPxM_X5InFhMmE9")
+        channel_url = settings.get("channel_url", "https://t.me/nhbdotpmethod")
 
         keyboard = []
         for g_num in generated_nums:
@@ -3383,8 +3383,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
         settings = load_settings()
-        otp_group_url = settings.get("otp_group_url", "https://t.me/+31eV11IT7WQzMjI9")
-        channel_url = settings.get("channel_url", "https://t.me/MinoXofficial0")
+        otp_group_url = settings.get("otp_group_url", "https://t.me/+dhPxM_X5InFhMmE9")
+        channel_url = settings.get("channel_url", "https://t.me/nhbdotpmethod")
         
         keyboard = []
         for g_num in generated_nums:
